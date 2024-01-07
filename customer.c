@@ -28,20 +28,27 @@ int main(){
     // create a new semaphore or open existing one
     sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
 
+    if(sem == SEM_FAILED){
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+    }
     // read the shelf file
     read_Shelf_file(itemsOnShelf, NUMOFPRODUCTS); // use semaphore
 
     // to create random number
     srand(time(NULL));
 
-
-    if(sem == SEM_FAILED){
-        perror("sem_open");
-        exit(EXIT_FAILURE);
-    }
-
     // simulate shopping
     customerBuy(itemsOnShelf, RESTOCK_THRESHOLD, NUMOFPRODUCTS, MAX_ITEM_PER_CUSTOMER);
+   
+
+    // // relese the lock
+    sem_post(sem);
+
+     sleep(3);
+
+    // //close the semaphore
+    // sem_close(sem);
     
     sem_close(sem);
 
@@ -75,14 +82,6 @@ void read_Shelf_file(int itemsOnShelf[], int NUMOFPRODUCTS){
     }
 
     fclose(file);
-
-    // relese the lock
-    sem_post(sem);
-
-    //close the semaphore
-    sem_close(sem);
-
-
 }
 
 
@@ -99,22 +98,11 @@ void customerBuy(int itemsOnShelf[], int RESTOCK_THRESHOLD, int NUMOFPRODUCTS, i
         printf("CUSTOMER CHOSE TO BUY  ITEM{%d}  , with quantity = {%d}\n",itemIndex+1,quantity);
         // check the shelf, buy if possible
         checK_shelf(itemIndex, quantity,NUMOFPRODUCTS);
-        sleep(2);
     }
-
-
 }
 
 void checK_shelf(int item_index, int num_items_to_buy, int NUMOFPRODUCTS){
-    // open the semaphore
-    sem_t *sem = sem_open(SEM_NAME, 0);
-    if ( sem == SEM_FAILED){
-        perror("sem_open");
-        exit(EXIT_FAILURE);
-    }
-
-    // gain the lock
-    sem_wait(sem);
+ 
 
     // read and write the file
     FILE *file = fopen(SHELF_FILE, "r+");
@@ -144,6 +132,7 @@ void checK_shelf(int item_index, int num_items_to_buy, int NUMOFPRODUCTS){
                     printf("Failed to read item %d.",i);
                 }
             }
+
             items[item_index] = current_items;
 
             rewind(file);
@@ -157,13 +146,6 @@ void checK_shelf(int item_index, int num_items_to_buy, int NUMOFPRODUCTS){
         printf("NOT ENOUGHT ITEMS FOR THE CUSTOMER TO BUY.\n");
     }
     fclose(file);
-
-    // relese the lock
-    sem_post(sem);
-
-    //close the semaphore
-    sem_close(sem);
-
 }
 
 
