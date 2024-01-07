@@ -1,7 +1,8 @@
 #include "local.h"
-// still not ready to execute
+// still no ready to execute
 void initialize_storage(int [],int,int);
 void initialize_shelves(int [], int , int);
+void read_Shelf_file(int [], int);
 void customerBuy(int [], int, int, int);
 void checK_shelf(int item_index, int num_items_to_buy, int NUMOFPRODUCTS);
 int main(){
@@ -15,23 +16,31 @@ int main(){
     // number of total products (types) the super have 
     int NUMOFPRODUCTS = supermarket_config[0];
 
+    // if number of itemms on the shelf become below RESTOCK_THRESHOLD, bring from storage
     int RESTOCK_THRESHOLD = supermarket_config[4];
 
+    // Maximum number of items of the same product a customer can buy
     int MAX_ITEM_PER_CUSTOMER = supermarket_config[8];
 
+    // array to represent items on shelfs
     int itemsOnShelf[NUMOFPRODUCTS];  
-
-    // read the shelf file
-    // still not impelemnted
-    srand(time(NULL));
 
     // create a new semaphore or open existing one
     sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
+
+    // read the shelf file
+    read_Shelf_file(itemsOnShelf, NUMOFPRODUCTS); // use semaphore
+
+    // to create random number
+    srand(time(NULL));
+
+
     if(sem == SEM_FAILED){
         perror("sem_open");
         exit(EXIT_FAILURE);
     }
 
+    // simulate shopping
     customerBuy(itemsOnShelf, RESTOCK_THRESHOLD, NUMOFPRODUCTS, MAX_ITEM_PER_CUSTOMER);
     
     sem_close(sem);
@@ -40,6 +49,41 @@ int main(){
   
 }
 
+void read_Shelf_file(int itemsOnShelf[], int NUMOFPRODUCTS){
+    // semaphore
+    // open the semaphore
+    sem_t *sem = sem_open(SEM_NAME, 0);
+    if ( sem == SEM_FAILED){
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+    }
+
+    // gain the lock
+    sem_wait(sem);
+
+    // read and write the file
+    FILE *file = fopen(SHELF_FILE, "r");
+    if ( file == NULL){
+        perror("fopen");
+        exit(EXIT_FAILURE);
+    }
+
+     for(int i =0 ;i<NUMOFPRODUCTS;i++){
+        if(fscanf(file,"%d", &itemsOnShelf[i]) != 1){
+            printf(" IN CUSTOMER, Failed to read item %d.",i);
+         }
+    }
+
+    fclose(file);
+
+    // relese the lock
+    sem_post(sem);
+
+    //close the semaphore
+    sem_close(sem);
+
+
+}
 
 
 void customerBuy(int itemsOnShelf[], int RESTOCK_THRESHOLD, int NUMOFPRODUCTS, int MAX_ITEM_PER_CUSTOMER){
@@ -47,13 +91,13 @@ void customerBuy(int itemsOnShelf[], int RESTOCK_THRESHOLD, int NUMOFPRODUCTS, i
     // get number of products to buy
     int numOfProductsToBuy = randBetween(1,NUMOFPRODUCTS);
     // customer choose random quantity of each time
-
     for(int i = 0;i < numOfProductsToBuy; i++){
         // choose product index randomly
         int itemIndex = rand() % NUMOFPRODUCTS;
         // choose the quantity to buy
         int quantity = randBetween(1, MAX_ITEM_PER_CUSTOMER );
         printf("CUSTOMER CHOSE TO BUY  ITEM{%d}  , with quantity = {%d}\n",itemIndex+1,quantity);
+        // check the shelf, buy if possible
         checK_shelf(itemIndex, quantity,NUMOFPRODUCTS);
         sleep(2);
     }
