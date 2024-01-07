@@ -25,5 +25,18 @@
 #include <time.h>
 #include <pthread.h>
 #include <pthread.h>
+#include <fcntl.h>
+#include <semaphore.h>
+
+#define MAX_ITEMS 10
+#define CONFIG_SIZE 15
+#define SHELF_FILE "shelf.txt"
+#define SEM_NAME "/mysemaphore3"
+#define SHELF_FILE "shelf.txt"
+#define STORAGE_FILE "storage.txt"
+
+
+int read_supermarket_config(int configValues[]);
+int randBetween(int min, int max);
 
 #endif
