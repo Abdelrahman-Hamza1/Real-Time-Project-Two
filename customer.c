@@ -1,5 +1,5 @@
 #include "local.h"
-// still no ready to execute
+// still not ready to execute
 void initialize_storage(int [],int,int);
 void initialize_shelves(int [], int , int);
 void customerBuy(int [], int, int, int);
