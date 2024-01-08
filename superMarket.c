@@ -1,42 +1,49 @@
 #include "local.h"
+
+int mid;
+sem_t *sem;
 void initialize_storage(int [],int,int);
 void initialize_shelves(int [], int , int);
 int main(int argc, char *arg[]){
 
-    // array to save or to read the configurations (constans) from the file
+
+    sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
+    if(sem == SEM_FAILED){
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+    }
+
+    key_t       key; 
+    if ((key = ftok(".", SEED)) == -1) {    
+        perror("CASHIER:  Client: key generation");
+        return 1;
+    }
+    if ((mid = msgget(key, 0 )) == -1 ) {
+        mid = msgget(key,IPC_CREAT | 0777);
+    }
+    printf("\nSupermarket: SUCCESSFULY CREATED Message Queue. Id =  %d \n", mid);
+
+
+    if ( sigset(SIGUSR1, signal_catcher) == SIG_ERR ) { // customers
+        perror("Sigset can not set SIGINT");
+        exit(SIGINT);
+    }
+
+
     int supermarket_config[CONFIG_SIZE]; 
-    // call the function to read the thresolds and user defined values
-    int numOfConfig = read_supermarket_config(supermarket_config); //read the file
-
-    // the number OF SHELVING TEAMS
+    int numOfConfig = read_supermarket_config(supermarket_config); 
     int NUM_OF_SHELVING_TEAMS = supermarket_config[2];
-
-    // THE number OF PRODUCTS(TYPE OF PRODUCTS) IN THE SUPERMARKET
     int  NUMOFPRODUCTS = supermarket_config[0];
-
-    // NUMBER OF ITEMS AT EACH SHELF
     int SHELF_AMOUNT_PER_PRODUCT = supermarket_config[1];
-
-    //NUMBER OF PRODUCTS IN EACH PLACE OF STORAGE 
     int STORAGE_AMOUNT_PER_PRODUCT = supermarket_config[14];
-
-    // array of items on the shelves
+    int MINIMUM_ARRIVAL_RATE = supermarket_config[6];
+    int MAXIMUM_ARRIVAL_RATE = supermarket_config[7];
     int itemsOnShelf[NUMOFPRODUCTS];
-
-    // array of products in the storage
     int storage[NUMOFPRODUCTS];
-
-
-   // initialize the file and the array of storage
-    initialize_storage(storage, NUMOFPRODUCTS, STORAGE_AMOUNT_PER_PRODUCT);
-
-    // initialize the file and the array of shelves
+    initialize_storage(storage, NUMOFPRODUCTS, STORAGE_AMOUNT_PER_PRODUCT); // NOTE ON INITALIZATION: MIGHT NOT BE NEEDED IF DATA IS FED INTO THE INPUT FILE
     initialize_shelves(itemsOnShelf, NUMOFPRODUCTS, SHELF_AMOUNT_PER_PRODUCT);
 
 
-
-
-    // fork the shelving teams
     for (int i = 0 ; i < NUM_OF_SHELVING_TEAMS; i++){
         switch (fork()) {
             case -1:
@@ -46,15 +53,67 @@ int main(int argc, char *arg[]){
             case 0:
             char buffer[20];
             sprintf(buffer, "%d", i);          
-            execlp("./shelving_team", "shelving_team", buffer, "&", 0);
+            execlp("./Team", "Team", buffer, "&", 0);
             perror("shelving_team: exec");
             return 3;
         }
     }
 
-    // fork the process that will fork the employees:
-    // also maybe initilize the file which represents storage
-    // also the file which represents the shelves
+
+    int sleepTime = randBetween(MINIMUM_ARRIVAL_RATE,MAXIMUM_ARRIVAL_RATE);
+
+    printf("SUPERMARKET: ARRIVAL RATE: %d\n", sleepTime);
+    
+    while(1){
+        sleep(sleepTime);    
+        switch (fork()) {
+            case -1:
+            perror("Client: fork");
+            return 2;
+
+            case 0:        
+            execlp("./customer", "customer", "&", 0);
+            perror("customer: exec");
+            return 3;
+        }
+    }
+}
+
+
+void cleanUp() {
+    if (sem != NULL) {
+        sem_close(sem);
+        sem_unlink(SEM_NAME);
+    }
+
+    if (mid != -1) {
+        msgctl(mid, IPC_RMID, NULL);
+    }
+}
+
+void signal_catcher(int i){
+    if (i == SIGUSR1){
+        /*
+        LOGIC HERE: 
+        1) Check if we must send a message by checking thresholds etc from file. 
+        2) check if we have to exit the system -> cleanup() then exit!
+        */
+        int itemIndex;
+        int itemCount;
+
+        MESSAGE msg;
+        msg.msg_type = TO_TEAM;
+        msg.index = itemIndex;;
+        msg.count = itemCount; // get customer process ID
+
+        if(msgsnd(mid, &msg, sizeof(msg), 0) == -1){
+            perror("Supermarkert: Error Sending Message to Team!\n");
+            exit(EXIT_FAILURE);
+        }
+    }else{
+        cleanUp();
+        exit(1);
+    }
 }
 
 void initialize_storage(int storage[], int NUMOFPRODUCTS, int STORAGE_AMOUNT_PER_PRODUCT){
@@ -62,8 +121,6 @@ void initialize_storage(int storage[], int NUMOFPRODUCTS, int STORAGE_AMOUNT_PER
         storage[i] = STORAGE_AMOUNT_PER_PRODUCT;
     }
 
-    // print the storage array at storage.txt
-    // read and write the file
     FILE *file = fopen(STORAGE_FILE, "w");
     if ( file == NULL){
         perror("fopen");
@@ -99,3 +156,5 @@ void initialize_shelves(int itemsOnShelf[], int NUMOFPRODUCTS, int SHELF_AMOUNT_
     // close the file
     fclose(file);
 }
+
+

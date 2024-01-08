@@ -34,7 +34,15 @@
 #define SEM_NAME "/mysemaphore3"
 #define SHELF_FILE "shelf.txt"
 #define STORAGE_FILE "storage.txt"
+#define SEED 'v'
+#define TO_SERVER 1
+#define TO_TEAM 0
 
+typedef struct{
+    long msg_type;
+    int index;
+    int count;
+} MESSAGE;
 
 int read_supermarket_config(int configValues[]);
 int randBetween(int min, int max);
