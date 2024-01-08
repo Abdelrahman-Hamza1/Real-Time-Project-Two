@@ -2,6 +2,7 @@
 
 int mid;
 sem_t *sem;
+int supermarket_config[CONFIG_SIZE]; 
 void initialize_storage(int [],int,int);
 void initialize_shelves(int [], int , int);
 int main(int argc, char *arg[]){
@@ -30,7 +31,7 @@ int main(int argc, char *arg[]){
     }
 
 
-    int supermarket_config[CONFIG_SIZE]; 
+ 
     int numOfConfig = read_supermarket_config(supermarket_config); 
     int NUM_OF_SHELVING_TEAMS = supermarket_config[2];
     int  NUMOFPRODUCTS = supermarket_config[0];
@@ -93,10 +94,52 @@ void cleanUp() {
 
 void signal_catcher(int i){
     if (i == SIGUSR1){
+
+        // open the shelves file, get semaphore
+        sem  = sem_open(SEM_NAME,0);
+        if(sem == SEM_FAILED){
+            perror("sem_open (super market file)");
+            exit(EXIT_FAILURE);
+        }
+        sem_wait(sem);
+
+        FILE *file = fopen(SHELF_FILE, "r");
+        if ( file == NULL){
+            perror("fopen (shelves file)");
+            exit(EXIT_FAILURE);
+        }
+
+        int NUMOFPRODUCTS = supermarket_config[0];
+        int itemsOnShelf[NUMOFPRODUCTS];
+
+        // read the shelves file
+        for(int i =0 ;i<NUMOFPRODUCTS;i++){
+            if(fscanf(file,"%d", &itemsOnShelf[i]) != 1){
+                printf(" IN SUPERMARKET FILE, Failed to read item %d.\n",i);
+            }
+        }
+
+        // check each item if below the threshold
+        int RESTOCK_THRESHOLD = supermarket_config[4];
+          for(int i =0 ;i<NUMOFPRODUCTS;i++){
+            if(itemsOnShelf[i] < RESTOCK_THRESHOLD){
+                printf("SHELF [%d] OUT OF STOCK",i); // this must be changed (send message to random team)
+            }
+        }
+
+        fclose(file);
+        // Release & End Connection with Semaphore
+        sem_post(sem);
+        sem_close(sem);
+
+        // CHECK STORAGE FILE
+        check_storage_file(NUMOFPRODUCTS);
+
+      
         /*
         LOGIC HERE: 
-        1) Check if we must send a message by checking thresholds etc from file. 
-        2) check if we have to exit the system -> cleanup() then exit!
+        1) Check if we must send a message by checking thresholds etc from file.  (semi done)
+        2) check if we have to exit the system -> cleanup() then exit! (done)
         */
         int itemIndex;
         int itemCount;
@@ -158,3 +201,35 @@ void initialize_shelves(int itemsOnShelf[], int NUMOFPRODUCTS, int SHELF_AMOUNT_
 }
 
 
+void check_storage_file(int NUMOFPRODUCTS){
+
+     // open the file
+        FILE *file = fopen(STORAGE_FILE, "r");
+        if ( file == NULL){
+            perror("fopen (storage file)");
+            exit(EXIT_FAILURE);
+        }
+     
+        // read the file
+        int itemsInStorage[NUMOFPRODUCTS];
+        for(int i =0 ;i<NUMOFPRODUCTS;i++){
+            if(fscanf(file,"%d", &itemsInStorage[i]) != 1){
+                printf(" IN SUPERMARKET FILE, Failed to read storage items %d.\n",i);
+            }
+        }
+
+        // check the storage array
+        int all_empty = 1;
+          for(int i =0 ;i<NUMOFPRODUCTS;i++){
+            if(itemsInStorage[i] != 0){
+                all_empty = 0;
+            }
+        }
+
+        if (all_empty){
+            cleanUp();
+            exit(1); // maybe we need to clean
+        }
+
+    
+}
