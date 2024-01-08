@@ -110,6 +110,7 @@ void signal_catcher(int i){
         }
 
         int NUMOFPRODUCTS = supermarket_config[0];
+        int RESTOCK_AMOUNT = supermarket_config[5];
         int itemsOnShelf[NUMOFPRODUCTS];
 
         // read the shelves file
@@ -119,11 +120,24 @@ void signal_catcher(int i){
             }
         }
 
+
+        MESSAGE msg;
+        msg.msg_type = TO_TEAM;
+
         // check each item if below the threshold
         int RESTOCK_THRESHOLD = supermarket_config[4];
           for(int i =0 ;i<NUMOFPRODUCTS;i++){
             if(itemsOnShelf[i] < RESTOCK_THRESHOLD){
-                printf("SHELF [%d] OUT OF STOCK",i); // this must be changed (send message to random team)
+                printf("SHELF [%d] OUT OF STOCK\n",i); // this must be changed (send message to random team)
+                printf("sendinf message to the team process\n");
+                 
+                msg.index = i;
+                msg.count = RESTOCK_AMOUNT; // NOT SURE, SUPPOCE RESTOCK_AMOUNT is more than the availible
+                int err = msgsnd(mid, &msg, sizeof(msg), 0);
+                if(err == -1){
+                    perror("SUPERMARKET: Error sending the message to the TEMA queue\n");
+                    exit(EXIT_FAILURE);
+                }
             }
         }
 
@@ -141,18 +155,9 @@ void signal_catcher(int i){
         1) Check if we must send a message by checking thresholds etc from file.  (semi done)
         2) check if we have to exit the system -> cleanup() then exit! (done)
         */
-        int itemIndex;
-        int itemCount;
+        // int itemIndex;
+        // int itemCount;
 
-        MESSAGE msg;
-        msg.msg_type = TO_TEAM;
-        msg.index = itemIndex;;
-        msg.count = itemCount; // get customer process ID
-
-        if(msgsnd(mid, &msg, sizeof(msg), 0) == -1){
-            perror("Supermarkert: Error Sending Message to Team!\n");
-            exit(EXIT_FAILURE);
-        }
     }else{
         cleanUp();
         exit(1);
