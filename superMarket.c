@@ -3,6 +3,7 @@
 int mid;
 sem_t *sem;
 int supermarket_config[CONFIG_SIZE]; 
+
 void initialize_storage(int [],int,int);
 void initialize_shelves(int [], int , int);
 int main(int argc, char *arg[]){
@@ -124,15 +125,14 @@ void signal_catcher(int i){
         MESSAGE msg;
         msg.msg_type = TO_TEAM;
 
-        // check each item if below the threshold
         int RESTOCK_THRESHOLD = supermarket_config[4];
           for(int i =0 ;i<NUMOFPRODUCTS;i++){
             if(itemsOnShelf[i] < RESTOCK_THRESHOLD){
-                printf("SHELF [%d] OUT OF STOCK\n",i); // this must be changed (send message to random team)
+                printf("SHELF [%d] OUT OF STOCK\n",i); 
                 printf("sendinf message to the team process\n");
                  
                 msg.index = i;
-                msg.count = RESTOCK_AMOUNT; // NOT SURE, SUPPOCE RESTOCK_AMOUNT is more than the availible
+                msg.count = RESTOCK_AMOUNT; 
                 int err = msgsnd(mid, &msg, sizeof(msg), 0);
                 if(err == -1){
                     perror("SUPERMARKET: Error sending the message to the TEMA queue\n");
@@ -142,22 +142,11 @@ void signal_catcher(int i){
         }
 
         fclose(file);
-        // Release & End Connection with Semaphore
+
         sem_post(sem);
         sem_close(sem);
 
-        // CHECK STORAGE FILE
         check_storage_file(NUMOFPRODUCTS);
-
-      
-        /*
-        LOGIC HERE: 
-        1) Check if we must send a message by checking thresholds etc from file.  (semi done)
-        2) check if we have to exit the system -> cleanup() then exit! (done)
-        */
-        // int itemIndex;
-        // int itemCount;
-
     }else{
         cleanUp();
         exit(1);
@@ -233,8 +222,6 @@ void check_storage_file(int NUMOFPRODUCTS){
 
         if (all_empty){
             cleanUp();
-            exit(1); // maybe we need to clean
+            exit(1); 
         }
-
-    
 }
