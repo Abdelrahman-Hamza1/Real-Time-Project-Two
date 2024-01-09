@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -w
 
 all: supermarket team customer forkcustomers
 
@@ -11,8 +11,8 @@ team: team.c read_supermarket_config.c
 
 customer: customer.c read_supermarket_config.c
 	$(CC) $(CFLAGS) -o customer customer.c read_supermarket_config.c
-forkcustomers: forkcustomers.c
-	$(CC) $(CFLAGS) -o forkcustomers forkcustomers.c 
+forkcustomers: forkcustomers.c read_supermarket_config.c
+	$(CC) $(CFLAGS) -o forkcustomers forkcustomers.c read_supermarket_config.c
 
 .PHONY: clean
 

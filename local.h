@@ -47,3 +47,13 @@ int read_supermarket_config(int configValues[]);
 int randBetween(int min, int max);
 
 #endif
+
+/*
+MODIFY STORAGE & CHECK MAX VALUE FROM STORAGE & DECREMENT STORAGE 
+
+MAKE SURE ALL USER DEFINED VALUES ARE USED DONE
+
+FIX PRINTS DONE
+
+11TH INDEX IN FILE. DONE
+*/

@@ -6,6 +6,7 @@ int supermarket_config[CONFIG_SIZE];
 
 void initialize_storage(int [],int,int);
 void initialize_shelves(int [], int , int);
+int check_storage_file(int , int, int );
 void signal_catcher(int i);
 int main(int argc, char *arg[]){
 
@@ -47,6 +48,8 @@ int main(int argc, char *arg[]){
     int STORAGE_AMOUNT_PER_PRODUCT = supermarket_config[14];
     int MINIMUM_ARRIVAL_RATE = supermarket_config[6];
     int MAXIMUM_ARRIVAL_RATE = supermarket_config[7];
+    int maxRunTime = supermarket_config[10];
+    alarm(maxRunTime*60);
     int itemsOnShelf[NUMOFPRODUCTS];
     int storage[NUMOFPRODUCTS];
     initialize_storage(storage, NUMOFPRODUCTS, STORAGE_AMOUNT_PER_PRODUCT); // NOTE ON INITALIZATION: MIGHT NOT BE NEEDED IF DATA IS FED INTO THE INPUT FILE
@@ -80,25 +83,6 @@ int main(int argc, char *arg[]){
     perror("customer: exec");
     return 3;
 }
-
-    // printf("Supermarket: Just finished forking Teams. onto Customers!\n");
-    // int sleepTime = randBetween(MINIMUM_ARRIVAL_RATE,MAXIMUM_ARRIVAL_RATE);
-
-    // printf("Supermarket: My Arrival Rate: %d I will begin forking customers\n", sleepTime);
-    
-    // while(1){  
-    //     switch (fork()) {
-    //         case -1:
-    //         perror("Client: fork");
-    //         return 2;
-
-    //         case 0:        
-    //         execlp("./customer", "customer", "&", 0);
-    //         perror("customer: exec");
-    //         return 3;
-    //     }
-    //     sleep(50);  
-    // }
     while(1){
         pause();
     }
@@ -113,18 +97,23 @@ void cleanUp() {
     }
 
     if (mid != -1) {
-        msgctl(mid, IPC_RMID, NULL);
+        msgctl(mid, IPC_RMID, (struct msgid_ds *) 0); 
     }
 }
 
 void signal_catcher(int i){
+    if (i == SIGALRM){
+        printf("Just got alarm! Running Time is over. will Exit. \n");
+        cleanUp();
+        exit(-1000);
+    }
     if(i == SIGUSR2){
         cleanUp();
         exit(-500);
     }
     if (i == SIGUSR1){
 
-        printf("Supermarket: Just Recieved Signal, I'll Check File! \n ");
+        printf("Supermarket: Just Recieved Signal, WIll Check File! \n ");
 
         sem  = sem_open(SEM_NAME,0);
         if(sem == SEM_FAILED){
@@ -154,24 +143,20 @@ void signal_catcher(int i){
         int RESTOCK_THRESHOLD = supermarket_config[4];
           for(int i =0 ;i<NUMOFPRODUCTS;i++){
             if(itemsOnShelf[i] < RESTOCK_THRESHOLD && (locks[i] == 0)){
-                printf("Supermarket: Shelf [%d] has [%d] which is Below the Threshold! Sending Message to Queue! \n",i, itemsOnShelf[i]);
-                locks[i] = 1; 
-
                 
+                locks[i] = 1; 
 
                 MESSAGE msg;
                 msg.msg_type = TO_TEAM;
                 msg.index = i;
-                msg.count = RESTOCK_AMOUNT; 
-                printf("MYMSG TYPE = %ld\n", msg.msg_type);
-
+                msg.count =  check_storage_file( NUMOFPRODUCTS, i, RESTOCK_AMOUNT);
+                printf("Supermarket: Shelf [%d] has [%d] which is Below the Threshold! Sending Message to Queue to refill %d units \n",i+1, itemsOnShelf[i], msg.count);
                 key_t       key; 
                 if ((key = ftok(".", SEED)) == -1) {    
                     perror("CASHIER:  Client: key generation");
                     return 1;
                 }
                 int myMid = msgget(key, 0 );
-                printf("%d\n" , myMid);
                 int err = msgsnd(myMid, &msg, sizeof(MESSAGE) - sizeof(long), 0);
                 if(err == -1){
                     perror("SUPERMARKET: Error sending the message to the Team queue\n");
@@ -183,8 +168,12 @@ void signal_catcher(int i){
                 printf("Supermarket: Item {%d} Is Below the Threshold, but Satus is 1! \n",i);
             }
         }
-        rewind(file);// return the pointer to the start of the file
+        rewind(file);
         for(int i =0 ;i<NUMOFPRODUCTS;i++){
+            if( i == NUMOFPRODUCTS-1){
+                fprintf(file,"%d %d", itemsOnShelf[i], locks[i]);  
+                break;
+            }
             fprintf(file,"%d %d\n", itemsOnShelf[i], locks[i]);  
         }
 
@@ -193,8 +182,6 @@ void signal_catcher(int i){
 
         sem_post(sem);
         sem_close(sem);
-
-        check_storage_file(NUMOFPRODUCTS);
     }else{
         cleanUp();
         exit(1);
@@ -214,6 +201,10 @@ void initialize_storage(int storage[], int NUMOFPRODUCTS, int STORAGE_AMOUNT_PER
 
     // print the data at the file
     for(int i =0;i< NUMOFPRODUCTS; i++){
+        if( i == NUMOFPRODUCTS-1){
+            fprintf(file,"%d",storage[i]);
+            break;
+        }
          fprintf(file,"%d\n",storage[i]);
     }
     // close the file
@@ -236,6 +227,10 @@ void initialize_shelves(int itemsOnShelf[], int NUMOFPRODUCTS, int SHELF_AMOUNT_
 
     // print the data at the file
     for(int i =0;i< NUMOFPRODUCTS; i++){
+        if( i == NUMOFPRODUCTS-1){
+            fprintf(file,"%d 0",itemsOnShelf[i]);
+            break;
+        }
         fprintf(file,"%d 0\n",itemsOnShelf[i]);
     }
     // close the file
@@ -243,10 +238,10 @@ void initialize_shelves(int itemsOnShelf[], int NUMOFPRODUCTS, int SHELF_AMOUNT_
 }
 
 
-void check_storage_file(int NUMOFPRODUCTS){
+int check_storage_file(int NUMOFPRODUCTS, int index, int RESTOCK_AMOUNT){
 
      // open the file
-        FILE *file = fopen(STORAGE_FILE, "r");
+        FILE *file = fopen(STORAGE_FILE, "r+");
         if ( file == NULL){
             perror("fopen (storage file)");
             exit(EXIT_FAILURE);
@@ -260,6 +255,25 @@ void check_storage_file(int NUMOFPRODUCTS){
             }
         }
 
+        int refillAmount = RESTOCK_AMOUNT > itemsInStorage[index] ? itemsInStorage[index] : RESTOCK_AMOUNT;
+
+        for(int i =0;i< NUMOFPRODUCTS; i++){
+            if(i == index){
+                itemsInStorage[i] -= refillAmount;
+            }
+            printf("ItemsInStorage[%d] = %d\n", i, itemsInStorage[i]);
+        }
+
+        rewind(file);
+        for(int i =0;i< NUMOFPRODUCTS; i++){
+            printf("ItemsInStorage[%d] = %d\n", i, itemsInStorage[i]);
+            if( i == NUMOFPRODUCTS-1){
+                fprintf(file,"%d",itemsInStorage[i]);
+                break;
+            }
+            fprintf(file,"%d\n",itemsInStorage[i]);
+        }
+        fclose(file);
         // check the storage array
         int all_empty = 1;
           for(int i =0 ;i<NUMOFPRODUCTS;i++){
@@ -272,4 +286,6 @@ void check_storage_file(int NUMOFPRODUCTS){
             cleanUp();
             exit(1); 
         }
+        return refillAmount;
+
 }

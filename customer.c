@@ -44,9 +44,9 @@ int main(int argc, char *arg[]){
 
     srand(time(NULL));
 
-    int numOfProductsToBuy = randBetween(2,NUMOFPRODUCTS);
+    int numOfProductsToBuy = randBetween(1,NUMOFPRODUCTS);
     for(int i = 0;i < numOfProductsToBuy; i++){
-        int itemIndex = randBetween(0, NUMOFPRODUCTS);
+        int itemIndex = randBetween(0, NUMOFPRODUCTS-1);
         int quantity =  MAX_ITEM_PER_CUSTOMER > itemsOnShelf[itemIndex] ? randBetween(1, itemsOnShelf[itemIndex]) : randBetween(1, MAX_ITEM_PER_CUSTOMER);
         printf("Customer[%d]: I chose to buy item [%d]  with quantity [%d]\n", getpid() ,itemIndex+1,quantity);
         // update the array
@@ -57,6 +57,10 @@ int main(int argc, char *arg[]){
      // update the file
     rewind(file);// return the pointer to the start of the file
     for(int i =0 ;i<NUMOFPRODUCTS;i++){
+        if( i == NUMOFPRODUCTS-1){
+            fprintf(file,"%d %d", itemsOnShelf[i], locks[i]);  
+            break;
+        }
         fprintf(file,"%d %d\n", itemsOnShelf[i],locks[i]);  
     }
 
@@ -68,7 +72,7 @@ int main(int argc, char *arg[]){
      
     sleep(20);
 
-    printf("SENDING SIGNAL to %d!\n", ppid);
+    printf("Customer[%d] Sending Signal to Supermarket\n", getpid());
     kill(ppid,SIGUSR1 ); // after we finish, signal to parent!
     return 1;
 }
