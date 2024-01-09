@@ -10,7 +10,7 @@ int main(int argc, char *arg[]){
     int MAX_ITEM_PER_CUSTOMER = supermarket_config[8];
 
     int itemsOnShelf[NUMOFPRODUCTS];  
-    sem_t *sem  = sem_open(SEM_NAME,0);
+    sem_t *sem  = sem_open(SEM_NAME, 0);
 
     if(sem == SEM_FAILED){
         perror("sem_open");
@@ -24,12 +24,16 @@ int main(int argc, char *arg[]){
         perror("fopen");
         exit(EXIT_FAILURE);
     }
+
+    // dummy variable, to read the second column values
+    int locks[NUMOFPRODUCTS];
     for(int i =0 ;i<NUMOFPRODUCTS;i++){
-        if(fscanf(file,"%d", &itemsOnShelf[i]) != 1){
+        if(fscanf(file,"%d %d", &itemsOnShelf[i], &locks[i]) != 2){
             printf(" IN CUSTOMER, Failed to read item %d.\n",i);
          }
     }
 
+   
     
 
     srand(time(NULL));
@@ -42,11 +46,12 @@ int main(int argc, char *arg[]){
         // update the array
         itemsOnShelf[itemIndex] = itemsOnShelf[itemIndex] - quantity ;
     }
+    
 
      // update the file
     rewind(file);// return the pointer to the start of the file
     for(int i =0 ;i<NUMOFPRODUCTS;i++){
-        fprintf(file,"%d\n", itemsOnShelf[i]);  
+        fprintf(file,"%d %d\n", itemsOnShelf[i],locks[i]);  
     }
 
     fclose(file);
@@ -56,7 +61,7 @@ int main(int argc, char *arg[]){
     sem_close(sem);
      
     sleep(3);
-    
+
 
     kill(getppid(),SIGUSR1 ); // after we finish, signal to parent!
     return 1;
