@@ -113,10 +113,11 @@ void signal_catcher(int i){
         int NUMOFPRODUCTS = supermarket_config[0];
         int RESTOCK_AMOUNT = supermarket_config[5];
         int itemsOnShelf[NUMOFPRODUCTS];
+        int locks[NUMOFPRODUCTS]; // to read the second column in shelf.txt
 
         // read the shelves file
         for(int i =0 ;i<NUMOFPRODUCTS;i++){
-            if(fscanf(file,"%d", &itemsOnShelf[i]) != 1){
+            if(fscanf(file,"%d %d", &itemsOnShelf[i], &locks[i]) != 2){
                 printf(" IN SUPERMARKET FILE, Failed to read item %d.\n",i);
             }
         }
@@ -127,9 +128,10 @@ void signal_catcher(int i){
 
         int RESTOCK_THRESHOLD = supermarket_config[4];
           for(int i =0 ;i<NUMOFPRODUCTS;i++){
-            if(itemsOnShelf[i] < RESTOCK_THRESHOLD){
+            if(itemsOnShelf[i] < RESTOCK_THRESHOLD && (locks[i] == 0)){
                 printf("SHELF [%d] OUT OF STOCK\n",i); 
                 printf("sendinf message to the team process\n");
+                locks[i] = 1; // ITEM IS under modification
                  
                 msg.index = i;
                 msg.count = RESTOCK_AMOUNT; 
@@ -139,7 +141,12 @@ void signal_catcher(int i){
                     exit(EXIT_FAILURE);
                 }
             }
+
+            else if(itemsOnShelf[i] < RESTOCK_THRESHOLD && (locks[i] == 1)){
+                printf("Item {%d} IS BELOW THRESHOLD, BUT I HAVE ALREADY SENT A NOTIFICATION \n",i);
+            }
         }
+
 
         fclose(file);
 
