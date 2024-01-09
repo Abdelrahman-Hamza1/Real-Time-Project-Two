@@ -6,6 +6,7 @@ int supermarket_config[CONFIG_SIZE];
 
 void initialize_storage(int [],int,int);
 void initialize_shelves(int [], int , int);
+void signal_catcher(int i);
 int main(int argc, char *arg[]){
 
 
@@ -21,12 +22,18 @@ int main(int argc, char *arg[]){
         return 1;
     }
     if ((mid = msgget(key, 0 )) == -1 ) {
-        mid = msgget(key,IPC_CREAT | 0777);
+        mid = msgget(key, IPC_CREAT | 0777);
     }
-    printf("\nSupermarket: SUCCESSFULY CREATED Message Queue. Id =  %d \n", mid);
+
+    int myPid = getpid();
+    printf("\nSupermarket[%d]: SUCCESSFULY CREATED REsources. MQ_Id =  %d SM_ID = %d \n", myPid, mid, sem);
 
 
     if ( sigset(SIGUSR1, signal_catcher) == SIG_ERR ) { // customers
+        perror("Sigset can not set SIGINT");
+        exit(SIGINT);
+    }
+        if ( sigset(SIGUSR2, signal_catcher) == SIG_ERR ) { // customers
         perror("Sigset can not set SIGINT");
         exit(SIGINT);
     }
@@ -55,34 +62,51 @@ int main(int argc, char *arg[]){
             case 0:
             char buffer[20];
             sprintf(buffer, "%d", i);          
-            execlp("./Team", "Team", buffer, "&", 0);
+            execlp("./team", "team", buffer, "&", 0);
             perror("shelving_team: exec");
             return 3;
         }
     }
 
+    switch (fork()) {
+    case -1:
+    perror("Client: fork");
+    return 2;
 
-    int sleepTime = randBetween(MINIMUM_ARRIVAL_RATE,MAXIMUM_ARRIVAL_RATE);
+    case 0:
+    char ppid_str[20];
+    sprintf(ppid_str, "%d", myPid);        
+    execlp("./forkcustomers", "forkcustomers", ppid_str,"&", 0);
+    perror("customer: exec");
+    return 3;
+}
 
-    printf("SUPERMARKET: ARRIVAL RATE: %d\n", sleepTime);
+    // printf("Supermarket: Just finished forking Teams. onto Customers!\n");
+    // int sleepTime = randBetween(MINIMUM_ARRIVAL_RATE,MAXIMUM_ARRIVAL_RATE);
+
+    // printf("Supermarket: My Arrival Rate: %d I will begin forking customers\n", sleepTime);
     
-    while(1){
-        sleep(sleepTime);    
-        switch (fork()) {
-            case -1:
-            perror("Client: fork");
-            return 2;
+    // while(1){  
+    //     switch (fork()) {
+    //         case -1:
+    //         perror("Client: fork");
+    //         return 2;
 
-            case 0:        
-            execlp("./customer", "customer", "&", 0);
-            perror("customer: exec");
-            return 3;
-        }
+    //         case 0:        
+    //         execlp("./customer", "customer", "&", 0);
+    //         perror("customer: exec");
+    //         return 3;
+    //     }
+    //     sleep(50);  
+    // }
+    while(1){
+        pause();
     }
 }
 
 
 void cleanUp() {
+    printf("Supermaket: Cleaning up to exit now!\n");
     if (sem != NULL) {
         sem_close(sem);
         sem_unlink(SEM_NAME);
@@ -94,9 +118,14 @@ void cleanUp() {
 }
 
 void signal_catcher(int i){
+    if(i == SIGUSR2){
+        cleanUp();
+        exit(-500);
+    }
     if (i == SIGUSR1){
 
-        // open the shelves file, get semaphore
+        printf("Supermarket: Just Recieved Signal, I'll Check File! \n ");
+
         sem  = sem_open(SEM_NAME,0);
         if(sem == SEM_FAILED){
             perror("sem_open (super market file)");
@@ -104,7 +133,7 @@ void signal_catcher(int i){
         }
         sem_wait(sem);
 
-        FILE *file = fopen(SHELF_FILE, "r");
+        FILE *file = fopen(SHELF_FILE, "r+");
         if ( file == NULL){
             perror("fopen (shelves file)");
             exit(EXIT_FAILURE);
@@ -121,30 +150,42 @@ void signal_catcher(int i){
                 printf(" IN SUPERMARKET FILE, Failed to read item %d.\n",i);
             }
         }
-
-
-        MESSAGE msg;
-        msg.msg_type = TO_TEAM;
-
+        
         int RESTOCK_THRESHOLD = supermarket_config[4];
           for(int i =0 ;i<NUMOFPRODUCTS;i++){
             if(itemsOnShelf[i] < RESTOCK_THRESHOLD && (locks[i] == 0)){
-                printf("SHELF [%d] OUT OF STOCK\n",i); 
-                printf("sendinf message to the team process\n");
-                locks[i] = 1; // ITEM IS under modification
-                 
+                printf("Supermarket: Shelf [%d] has [%d] which is Below the Threshold! Sending Message to Queue! \n",i, itemsOnShelf[i]);
+                locks[i] = 1; 
+
+                
+
+                MESSAGE msg;
+                msg.msg_type = TO_TEAM;
                 msg.index = i;
                 msg.count = RESTOCK_AMOUNT; 
-                int err = msgsnd(mid, &msg, sizeof(msg), 0);
+                printf("MYMSG TYPE = %ld\n", msg.msg_type);
+
+                key_t       key; 
+                if ((key = ftok(".", SEED)) == -1) {    
+                    perror("CASHIER:  Client: key generation");
+                    return 1;
+                }
+                int myMid = msgget(key, 0 );
+                printf("%d\n" , myMid);
+                int err = msgsnd(myMid, &msg, sizeof(MESSAGE) - sizeof(long), 0);
                 if(err == -1){
-                    perror("SUPERMARKET: Error sending the message to the TEMA queue\n");
+                    perror("SUPERMARKET: Error sending the message to the Team queue\n");
+                    cleanUp();
                     exit(EXIT_FAILURE);
                 }
             }
-
             else if(itemsOnShelf[i] < RESTOCK_THRESHOLD && (locks[i] == 1)){
-                printf("Item {%d} IS BELOW THRESHOLD, BUT I HAVE ALREADY SENT A NOTIFICATION \n",i);
+                printf("Supermarket: Item {%d} Is Below the Threshold, but Satus is 1! \n",i);
             }
+        }
+        rewind(file);// return the pointer to the start of the file
+        for(int i =0 ;i<NUMOFPRODUCTS;i++){
+            fprintf(file,"%d %d\n", itemsOnShelf[i], locks[i]);  
         }
 
 
@@ -195,7 +236,7 @@ void initialize_shelves(int itemsOnShelf[], int NUMOFPRODUCTS, int SHELF_AMOUNT_
 
     // print the data at the file
     for(int i =0;i< NUMOFPRODUCTS; i++){
-         fprintf(file,"%d\n",itemsOnShelf[i]);
+        fprintf(file,"%d 0\n",itemsOnShelf[i]);
     }
     // close the file
     fclose(file);

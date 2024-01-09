@@ -31,12 +31,11 @@
 #define MAX_ITEMS 10
 #define CONFIG_SIZE 15
 #define SHELF_FILE "shelf.txt"
-#define SEM_NAME "/mysemaphore3"
+#define SEM_NAME "fkifhd"
 #define SHELF_FILE "shelf.txt"
 #define STORAGE_FILE "storage.txt"
 #define SEED 'v'
-#define TO_SERVER 1
-#define TO_TEAM 0
+#define TO_TEAM 1L
 
 typedef struct{
     long msg_type;

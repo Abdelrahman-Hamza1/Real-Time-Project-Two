@@ -2,10 +2,10 @@ numberOfProducts 10
 shelftAmountPerProduct 50
 numberOfShelvingTeams 2
 employeesPerTeam 2
-restockThreshold 10
+restockThreshold 48
 restockAmount 30
-customerArrivalMinTime 1
-customerArrivalMaxTime 20
+customerArrivalMinTime 35
+customerArrivalMaxTime 40
 maxItemsPerCustomer 5
 maxQuantityPerItem 3
 simulationTimeLimit 60

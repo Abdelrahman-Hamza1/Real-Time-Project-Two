@@ -2,7 +2,11 @@
 // still no ready to execute
 int main(int argc, char *arg[]){
 
-   // to read the configurations (constans) from the file
+    // printf("Customer [%d] Starting!\n", getpid());
+    prctl(PR_SET_PDEATHSIG, SIGHUP); // GET A SIGNAL WHEN PARENT IS KILLED
+
+    int ppid = atoi(arg[1]);
+
     int supermarket_config[CONFIG_SIZE];
     int numOfConfig = read_supermarket_config(supermarket_config);
     int NUMOFPRODUCTS = supermarket_config[0];
@@ -10,6 +14,7 @@ int main(int argc, char *arg[]){
     int MAX_ITEM_PER_CUSTOMER = supermarket_config[8];
 
     int itemsOnShelf[NUMOFPRODUCTS];  
+    // printf("Customer[%d] about to ask for semaphore!\n", getpid());
     sem_t *sem  = sem_open(SEM_NAME, 0);
 
     if(sem == SEM_FAILED){
@@ -19,6 +24,7 @@ int main(int argc, char *arg[]){
 
     sem_wait(sem);
 
+    // printf("Customer[%d] Got Semaphore! Will get to work!\n", getpid());
     FILE *file = fopen(SHELF_FILE, "r+");
     if ( file == NULL){
         perror("fopen");
@@ -38,13 +44,13 @@ int main(int argc, char *arg[]){
 
     srand(time(NULL));
 
-    int numOfProductsToBuy = randBetween(1,NUMOFPRODUCTS);
+    int numOfProductsToBuy = randBetween(2,NUMOFPRODUCTS);
     for(int i = 0;i < numOfProductsToBuy; i++){
         int itemIndex = randBetween(0, NUMOFPRODUCTS);
         int quantity =  MAX_ITEM_PER_CUSTOMER > itemsOnShelf[itemIndex] ? randBetween(1, itemsOnShelf[itemIndex]) : randBetween(1, MAX_ITEM_PER_CUSTOMER);
-        printf("CUSTOMER CHOSE TO BUY  ITEM{%d}  , with quantity = {%d}\n",itemIndex+1,quantity);
+        printf("Customer[%d]: I chose to buy item [%d]  with quantity [%d]\n", getpid() ,itemIndex+1,quantity);
         // update the array
-        itemsOnShelf[itemIndex] = itemsOnShelf[itemIndex] - quantity ;
+        itemsOnShelf[itemIndex] -= quantity ;
     }
     
 
@@ -60,9 +66,9 @@ int main(int argc, char *arg[]){
     sem_post(sem);
     sem_close(sem);
      
-    sleep(3);
+    sleep(20);
 
-
-    kill(getppid(),SIGUSR1 ); // after we finish, signal to parent!
+    printf("SENDING SIGNAL to %d!\n", ppid);
+    kill(ppid,SIGUSR1 ); // after we finish, signal to parent!
     return 1;
 }

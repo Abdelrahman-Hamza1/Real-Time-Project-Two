@@ -12,13 +12,15 @@ void * Manager(void *);
 void* Employee (void*);
 int main(int argc, char* argv[])
 {
+    prctl(PR_SET_PDEATHSIG, SIGHUP); // GET A SIGNAL WHEN PARENT IS KILLED
     int numOfConfig = read_supermarket_config(supermarket_config); 
 
-    int employeeCount =2;
+    int employeeCount = 2;
     int threadIds [employeeCount];
     int managerThreadId; 
     pthread_t threadJoin[employeeCount];
     pthread_t managerJoin;
+    printf("Team[%d]: Getting Started!\n", getpid());
 
 
     managerThreadId = pthread_create(&managerJoin, NULL, Manager, (void *) NULL);
@@ -55,7 +57,9 @@ void* Manager(void* data){
 
     while(1){
         pthread_mutex_lock(&count_mutex);
-        // msgrcv(5, NULL, NULL, NULL , NULL);  // BLOCK Run with the key! -> when rcv update the itemCounter
+        
+        printf("Manager[%d]: Now Waiting for Msg From Queue!\n", getpid());
+
         if ((n = msgrcv(mid, &msg, sizeof(msg), TO_TEAM, 0)) == -1 ) { /* Start waiting for a message to appear in MQ */
             perror("CASHIER:  msgrcv error");
             return -2;
@@ -63,17 +67,14 @@ void* Manager(void* data){
         itemIndex = msg.index;
         itemCounter = msg.count;
         addVal = msg.count;
+        printf("Manager[%d]: Have just recieved a message! will work on item[%d] will restock [%d] units!\n Work Handed To Employees! \n", getpid(), itemIndex, itemCounter);
         if(itemCounter != 0){
             pthread_cond_wait(&count_threshold_cv, &count_mutex); // here will stop and go sleep until the count 
 
-            /* 
-            Here must do the following:
-            1) first have to acquire file semaphore -> must connect to it.
-            2) add addVal to the file on the index = itemIndex. 
-            */
+           printf("Manager[%d]: Has just Gained Back Control, Will Ask for Semaphore & Update Quanitity & Status\n");
            sem_wait(sem);
 
-            FILE *file = fopen(SHELF_FILE, "r");
+            FILE *file = fopen(SHELF_FILE, "r+");
             if ( file == NULL){
                 perror("fopen (shelves file)");
                 exit(EXIT_FAILURE);
@@ -90,7 +91,7 @@ void* Manager(void* data){
                 }
                 if(i == itemIndex){
                     itemsOnShelf[i] += addVal;
-                    locks[i] == 0;
+                    locks[i] = 0;
                 }
             }
 
@@ -116,12 +117,14 @@ void* Employee(void* data){
 
         if(itemCounter != 0){
             itemCounter--;
-            printf("Thread [%d] just decreased the Counter to %d\n", data, itemCounter);
+            printf("Emplouee[%d]: Thread [%d] just shelved a unit. [%d] Units remaining!\n", getpid(), data, itemCounter);
         }
         if(itemCounter == 0)
         pthread_cond_broadcast(&count_threshold_cv);  
+
         pthread_mutex_unlock(&count_mutex); 
         sleep(1);
+        //usleep(1000);
     }
 
 }
