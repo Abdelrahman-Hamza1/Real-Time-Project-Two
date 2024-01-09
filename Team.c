@@ -82,20 +82,21 @@ void* Manager(void* data){
             int NUMOFPRODUCTS = supermarket_config[0];
             int RESTOCK_AMOUNT = supermarket_config[5];
             int itemsOnShelf[NUMOFPRODUCTS];
-
+            int locks[NUMOFPRODUCTS]; // to read the second column
             // read the shelves file
             for(int i =0 ;i<NUMOFPRODUCTS;i++){
-                if(fscanf(file,"%d", &itemsOnShelf[i]) != 1){
-                    printf(" IN SUPERMARKET FILE, Failed to read item %d.\n",i);
+                if(fscanf(file,"%d %d", &itemsOnShelf[i], &locks[i]) != 2){
+                    printf(" IN TEAM FILE, Failed to read item %d.\n",i);
                 }
                 if(i == itemIndex){
                     itemsOnShelf[i] += addVal;
+                    locks[i] == 0;
                 }
             }
 
             rewind(file);// return the pointer to the start of the file
             for(int i =0 ;i<NUMOFPRODUCTS;i++){
-                fprintf(file,"%d\n", itemsOnShelf[i]);  
+                fprintf(file,"%d %d\n", itemsOnShelf[i], locks[i]);  
             }
 
             fclose(file);
@@ -118,7 +119,7 @@ void* Employee(void* data){
             printf("Thread [%d] just decreased the Counter to %d\n", data, itemCounter);
         }
         if(itemCounter == 0)
-            pthread_cond_broadcast(&count_threshold_cv);  
+        pthread_cond_broadcast(&count_threshold_cv);  
         pthread_mutex_unlock(&count_mutex); 
         sleep(1);
     }
