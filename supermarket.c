@@ -3,14 +3,13 @@
 int mid;
 sem_t *sem;
 int supermarket_config[CONFIG_SIZE]; 
-
 void initialize_storage(int [],int,int);
 void initialize_shelves(int [], int , int);
 int check_storage_file(int , int, int );
 void signal_catcher(int i);
+
 int main(int argc, char *arg[]){
-
-
+    
     sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
     if(sem == SEM_FAILED){
         perror("sem_open");
@@ -29,7 +28,6 @@ int main(int argc, char *arg[]){
     int myPid = getpid();
     printf("\nSupermarket[%d]: SUCCESSFULY CREATED REsources. MQ_Id =  %d SM_ID = %d \n", myPid, mid, sem);
 
-
     if ( sigset(SIGUSR1, signal_catcher) == SIG_ERR ) { // customers
         perror("Sigset can not set SIGINT");
         exit(SIGINT);
@@ -41,10 +39,7 @@ int main(int argc, char *arg[]){
         if ( sigset(SIGINT, signal_catcher) == SIG_ERR ) { // customers
         perror("Sigset can not set SIGINT");
         exit(SIGINT);
-    }
-
-
- 
+    } 
     int numOfConfig = read_supermarket_config(supermarket_config); 
     int NUM_OF_SHELVING_TEAMS = supermarket_config[2];
     int  NUMOFPRODUCTS = supermarket_config[0];
@@ -58,7 +53,6 @@ int main(int argc, char *arg[]){
     int storage[NUMOFPRODUCTS];
     initialize_storage(storage, NUMOFPRODUCTS, STORAGE_AMOUNT_PER_PRODUCT); 
     initialize_shelves(itemsOnShelf, NUMOFPRODUCTS, SHELF_AMOUNT_PER_PRODUCT);
-
 
     switch (fork()) {
         case -1:
@@ -102,7 +96,6 @@ int main(int argc, char *arg[]){
         pause();
     }
 }
-
 
 void cleanUp() {
     printf("Supermaket: Cleaning up to exit now!\n");
@@ -160,7 +153,6 @@ void signal_catcher(int i){
             if(itemsOnShelf[i] < RESTOCK_THRESHOLD && (locks[i] == 0)){
                 
                 locks[i] = 1; 
-
                 MESSAGE msg;
                 msg.msg_type = TO_TEAM;
                 msg.index = i;
@@ -191,10 +183,9 @@ void signal_catcher(int i){
             }
             fprintf(file,"%d %d\n", itemsOnShelf[i], locks[i]);  
         }
-
-
+        
         fclose(file);
-
+        
         sem_post(sem);
         sem_close(sem);
     }else{
@@ -252,7 +243,6 @@ void initialize_shelves(int itemsOnShelf[], int NUMOFPRODUCTS, int SHELF_AMOUNT_
     fclose(file);
 }
 
-
 int check_storage_file(int NUMOFPRODUCTS, int index, int RESTOCK_AMOUNT){
 
      // open the file
@@ -275,7 +265,7 @@ int check_storage_file(int NUMOFPRODUCTS, int index, int RESTOCK_AMOUNT){
         for(int i =0;i< NUMOFPRODUCTS; i++){
             if(i == index){
                 itemsInStorage[i] -= refillAmount;
-                sendToOpenGL(i, SENT_TO_MODIFY_FILES, MODIFY_STORAGE, -1*refillAmount);
+                sendToGUI(i, SENT_TO_MODIFY_FILES, MODIFY_STORAGE, -1*refillAmount);
             }
             printf("ItemsInStorage[%d] = %d\n", i, itemsInStorage[i]);
         }
@@ -303,5 +293,4 @@ int check_storage_file(int NUMOFPRODUCTS, int index, int RESTOCK_AMOUNT){
             exit(1); 
         }
         return refillAmount;
-
 }
