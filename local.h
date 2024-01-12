@@ -1,4 +1,3 @@
-
 #ifndef __LOCAL_H_
 #define __LOCAL_H_
 
@@ -62,36 +61,9 @@ typedef struct {
     int flag;  
     int val;    
 } MessageGUI;
-/*
-Regardless of who is sending, pid will contain their Process ID
-
-If customer is sending message:
-flag == 0 : add customer 
-flag == 1 : remove customer 
-
-If Team sending message:
-flag == 0: add team
-flag == 1: remove team
-flag == 2: take index from flag & value from val. decrement/increment item[index] by value
-
-if Supermarket sending the message:
-take item index from flag, value from val, decrement/increment storage[index] by val
-*/
-
-
 
 int read_supermarket_config(int configValues[]);
 int randBetween(int min, int max);
 void sendToOpenGL( int pid ,int sender_type ,int flag, int val );
 
 #endif
-
-/*
-MODIFY STORAGE & CHECK MAX VALUE FROM STORAGE & DECREMENT STORAGE 
-
-MAKE SURE ALL USER DEFINED VALUES ARE USED DONE
-
-FIX PRINTS DONE
-
-11TH INDEX IN FILE. DONE
-*/
