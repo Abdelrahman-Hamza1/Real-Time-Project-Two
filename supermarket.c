@@ -28,15 +28,15 @@ int main(int argc, char *arg[]){
     int myPid = getpid();
     printf("\nSupermarket[%d]: SUCCESSFULY CREATED REsources. MQ_Id =  %d SM_ID = %d \n", myPid, mid, sem);
 
-    if ( sigset(SIGUSR1, signal_catcher) == SIG_ERR ) { // customers
+    if ( sigset(SIGUSR1, signal_catcher) == SIG_ERR ) { 
         perror("Sigset can not set SIGINT");
         exit(SIGINT);
     }
-    if ( sigset(SIGUSR2, signal_catcher) == SIG_ERR ) { // customers
+    if ( sigset(SIGUSR2, signal_catcher) == SIG_ERR ) { 
         perror("Sigset can not set SIGINT");
         exit(SIGINT);
     }
-        if ( sigset(SIGINT, signal_catcher) == SIG_ERR ) { // customers
+        if ( sigset(SIGINT, signal_catcher) == SIG_ERR ) { 
         perror("Sigset can not set SIGINT");
         exit(SIGINT);
     } 
@@ -139,9 +139,9 @@ void signal_catcher(int i){
         int NUMOFPRODUCTS = supermarket_config[0];
         int RESTOCK_AMOUNT = supermarket_config[5];
         int itemsOnShelf[NUMOFPRODUCTS];
-        int locks[NUMOFPRODUCTS]; // to read the second column in shelf.txt
+        int locks[NUMOFPRODUCTS];
 
-        // read the shelves file
+        
         for(int i =0 ;i<NUMOFPRODUCTS;i++){
             if(fscanf(file,"%d %d", &itemsOnShelf[i], &locks[i]) != 2){
                 printf(" IN SUPERMARKET FILE, Failed to read item %d.\n",i);
@@ -206,7 +206,6 @@ void initialize_storage(int storage[], int NUMOFPRODUCTS, int STORAGE_AMOUNT_PER
         exit(EXIT_FAILURE);
     }
 
-    // print the data at the file
     for(int i =0;i< NUMOFPRODUCTS; i++){
         if( i == NUMOFPRODUCTS-1){
             fprintf(file,"%d",storage[i]);
@@ -214,24 +213,21 @@ void initialize_storage(int storage[], int NUMOFPRODUCTS, int STORAGE_AMOUNT_PER
         }
          fprintf(file,"%d\n",storage[i]);
     }
-    // close the file
+
     fclose(file);
 }
 
 void initialize_shelves(int itemsOnShelf[], int NUMOFPRODUCTS, int SHELF_AMOUNT_PER_PRODUCT){
-    // initailize array of shelves
     for (int i =0; i< NUMOFPRODUCTS; i++){
         itemsOnShelf[i] = SHELF_AMOUNT_PER_PRODUCT;
     }
-    // print the shelves array at shelf.txt
-    // read and write the file
+
     FILE *file = fopen(SHELF_FILE, "w");
     if ( file == NULL){
         perror("fopen");
         exit(EXIT_FAILURE);
     }
 
-    // print the data at the file
     for(int i =0;i< NUMOFPRODUCTS; i++){
         if( i == NUMOFPRODUCTS-1){
             fprintf(file,"%d 0",itemsOnShelf[i]);
@@ -239,20 +235,18 @@ void initialize_shelves(int itemsOnShelf[], int NUMOFPRODUCTS, int SHELF_AMOUNT_
         }
         fprintf(file,"%d 0\n",itemsOnShelf[i]);
     }
-    // close the file
+
     fclose(file);
 }
 
 int check_storage_file(int NUMOFPRODUCTS, int index, int RESTOCK_AMOUNT){
-    
-     // open the file
+
         FILE *file = fopen(STORAGE_FILE, "r+");
         if ( file == NULL){
             perror("fopen (storage file)");
             exit(EXIT_FAILURE);
         }
      
-        // read the file
         int itemsInStorage[NUMOFPRODUCTS];
         for(int i =0 ;i<NUMOFPRODUCTS;i++){
             if(fscanf(file,"%d", &itemsInStorage[i]) != 1){
@@ -267,12 +261,10 @@ int check_storage_file(int NUMOFPRODUCTS, int index, int RESTOCK_AMOUNT){
                 itemsInStorage[i] -= refillAmount;
                 sendToGUI(i, SENT_TO_MODIFY_FILES, MODIFY_STORAGE, -1*refillAmount);
             }
-            printf("ItemsInStorage[%d] = %d\n", i, itemsInStorage[i]);
         }
 
         rewind(file);
         for(int i =0;i< NUMOFPRODUCTS; i++){
-            printf("ItemsInStorage[%d] = %d\n", i, itemsInStorage[i]);
             if( i == NUMOFPRODUCTS-1){
                 fprintf(file,"%d",itemsInStorage[i]);
                 break;
@@ -280,7 +272,7 @@ int check_storage_file(int NUMOFPRODUCTS, int index, int RESTOCK_AMOUNT){
             fprintf(file,"%d\n",itemsInStorage[i]);
         }
         fclose(file);
-        // check the storage array
+        
         int all_empty = 1;
           for(int i =0 ;i<NUMOFPRODUCTS;i++){
             if(itemsInStorage[i] != 0){

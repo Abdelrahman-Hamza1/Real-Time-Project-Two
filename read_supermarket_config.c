@@ -14,11 +14,9 @@ int read_supermarket_config(int configValues[]){
     char thresholdName[60];
     int value;
 
-    // read data from the file into the array
     int i = 0;
     while (fscanf(file, "%s %d", thresholdName, &value) == 2) {
         configValues[i] = value;
-        // check if the array is full
         if (++i >= 15) {
             break;
         }

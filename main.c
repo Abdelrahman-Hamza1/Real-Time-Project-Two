@@ -208,7 +208,7 @@ void removeEntry(Entity arr[], int size, int entry) {
 }
 
 int read_supermarket_config(int configValues[]){
-     FILE* file = fopen("supermarket_config.txt", "r"); 
+    FILE* file = fopen("supermarket_config.txt", "r"); 
 
     if (file == NULL) {
         printf("ERROR OPENING THE supermarket config file\n");
@@ -218,12 +218,10 @@ int read_supermarket_config(int configValues[]){
     char thresholdName[60];
     int value;
 
-    // read data from the file into the array
     int i = 0;
     while (fscanf(file, "%s %d", thresholdName, &value) == 2) {
         configValues[i] = value;
 
-        // check if the array is full
         if (++i >= 15) {
             break;
         }
