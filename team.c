@@ -12,7 +12,7 @@ void* Employee (void*);
 int main(int argc, char* argv[])
 {   
     sleep(1);
-    sendToOpenGL(getpid(), SENT_BY_TEAM, ADD_FLAG, -2);
+    sendToGUI(getpid(), SENT_BY_TEAM, ADD_FLAG, -2);
     prctl(PR_SET_PDEATHSIG, SIGHUP); // GET A SIGNAL WHEN PARENT IS KILLED
     
     int numOfConfig = read_supermarket_config(supermarket_config); 
@@ -58,7 +58,7 @@ void* Manager(void* data){
             
         pthread_mutex_lock(&count_mutex);
         printf("Manager[%d]: Now Waiting for Msg From Queue!\n", getpid());
-        sendToOpenGL(getpid(), SENT_BY_TEAM, MODIFY_FLAG, -2);
+        sendToGUI(getpid(), SENT_BY_TEAM, MODIFY_FLAG, -2);
         if ((n = msgrcv(mid, &msg, sizeof(msg), TO_TEAM, 0)) == -1 ) { /* Start waiting for a message to appear in MQ */
             perror("Manager:  msgrcv error");
             return -2;
@@ -66,7 +66,7 @@ void* Manager(void* data){
         itemIndex = msg.index;
         itemCounter = msg.count;
         addVal = msg.count;
-        sendToOpenGL(getpid(), SENT_BY_TEAM, MODIFY_FLAG, itemIndex);
+        sendToGUI(getpid(), SENT_BY_TEAM, MODIFY_FLAG, itemIndex);
         printf("Manager[%d]: Have just recieved a message! will work on item[%d] will restock [%d] units!\n Work Handed To Employees! \n", getpid(), itemIndex+1, itemCounter);
         if(itemCounter != 0){
             pthread_cond_wait(&count_threshold_cv, &count_mutex); // here will stop and go sleep until the count 
@@ -118,7 +118,7 @@ void* Employee(void* data){
 
         if(itemCounter != 0){
             itemCounter--;
-            sendToOpenGL(itemIndex, SENT_TO_MODIFY_FILES, MODIFY_SHELVES, 1);
+            sendToGUI(itemIndex, SENT_TO_MODIFY_FILES, MODIFY_SHELVES, 1);
         }
         if(itemCounter == 0)
         pthread_cond_broadcast(&count_threshold_cv);  
