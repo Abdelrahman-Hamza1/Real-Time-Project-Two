@@ -68,8 +68,8 @@ int main(void) {
 
   Font font = LoadFontEx("Roboto-Black.ttf", 20, 0, 0); 
 
-  int width = 150;
-  int height = 40;
+  int width = 175;
+  int height = 50;
 
   SetTargetFPS(60);
     pthread_t myThread;
@@ -102,7 +102,7 @@ int main(void) {
         int stepSizeCashier = screenHeight / teamCounter;
         for (int i = 0 ; i < teamCounter ; i++){
             cashierStrings[i] = (char *)malloc(100);
-            snprintf(cashierStrings[i], 100, "Team[%d] working on item[%d]", teams[i].id, teams[i].val+1);
+            snprintf(cashierStrings[i], 100, "Team[%d] working \n\non item[%d]", teams[i].id, teams[i].val+1);
             const char * text = cashierStrings[i];
             DrawRectangle(baseCASHX, ( baseCASHY + stepSizeCashier*(i+1) ) % screenHeight , width, height, rectangleColor);
             DrawTextEx(font, text, (Vector2){baseCASHX , ( baseCASHY + stepSizeCashier*(i+1)  ) % screenHeight }, font.baseSize, 0.0f, textColor);
