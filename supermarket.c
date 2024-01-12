@@ -188,6 +188,7 @@ void signal_catcher(int i){
         
         sem_post(sem);
         sem_close(sem);
+        
     }else{
         cleanUp();
         exit(1);
@@ -222,7 +223,6 @@ void initialize_shelves(int itemsOnShelf[], int NUMOFPRODUCTS, int SHELF_AMOUNT_
     for (int i =0; i< NUMOFPRODUCTS; i++){
         itemsOnShelf[i] = SHELF_AMOUNT_PER_PRODUCT;
     }
-
     // print the shelves array at shelf.txt
     // read and write the file
     FILE *file = fopen(SHELF_FILE, "w");
@@ -244,7 +244,7 @@ void initialize_shelves(int itemsOnShelf[], int NUMOFPRODUCTS, int SHELF_AMOUNT_
 }
 
 int check_storage_file(int NUMOFPRODUCTS, int index, int RESTOCK_AMOUNT){
-
+    
      // open the file
         FILE *file = fopen(STORAGE_FILE, "r+");
         if ( file == NULL){
@@ -287,7 +287,6 @@ int check_storage_file(int NUMOFPRODUCTS, int index, int RESTOCK_AMOUNT){
                 all_empty = 0;
             }
         }
-
         if (all_empty){
             cleanUp();
             exit(1); 
