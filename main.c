@@ -1,28 +1,19 @@
 #include <raylib.h>
 #include "local.h"
 
-// typedef struct MESSAGEGUI{
-//   long msgtype;
-//   int customerId;
-//   int cashierId;
-//   int val;
-//   int sentBy; // 0 = cashier, 1 = customer
-//   int flag; //  0 = nothing , 1 = leaving 
-// } MessageGui;
-
 typedef struct{
   int id;
   int val;
 } Entity;
+
 Entity customers[100];
 Entity teams[100];
 int shelves[100];
 int storage[100];
-
 int customerCounter = 0, teamCounter = 0, shelvesCount = 0, storageCount = 0;
-
 int read_supermarket_config(int configValues[]);
 void* myThreadFunction(void* );
+
 int main(void) {
     int supermarket_config[CONFIG_SIZE]; 
     int numOfConfig = read_supermarket_config(supermarket_config); 
@@ -94,7 +85,7 @@ int main(void) {
             DrawTextEx(font, customerStrings[i], (Vector2){baseX , ( baseY  + stepSizeCustomer*(i+1)) % screenHeight}, font.baseSize, 0.0f, textColor);
         }
     }
-
+    
     if(teamCounter > 0){
         char **cashierStrings = (char **)malloc(teamCounter * sizeof(char *));
         int baseCASHX = 300;
@@ -156,11 +147,9 @@ void* myThreadFunction(void* args){
     if ((mid = msgget(key, 0 )) == -1 ) {
       mid = msgget(key,IPC_CREAT | 0777);
     }
-
     printf("\nGUI: SUCCESSFULY CREATED Message Queue. Id =  %d \n", mid);
 
     while(1){
-
     MessageGUI msg; 
     int n = msgrcv(mid, &msg, sizeof(msg), TO_TEAM, 0);
     if (msg.sender_type == SENT_BY_CUSTOMER) {
