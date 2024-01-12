@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "local.h"
+
 int read_supermarket_config(int configValues[]){
      FILE* file = fopen("supermarket_config.txt", "r"); 
 
@@ -26,14 +28,33 @@ int read_supermarket_config(int configValues[]){
     return i;
 }
 
+void sendToOpenGL(int pid ,int sender_type ,int flag, int val ) {
+    key_t key;
+    int mid;
+    MessageGUI msg;
+
+    if ((key = ftok(".", GUISEED )) == -1) {
+        perror("Manager: key generation");
+        return;
+    }
+
+    if ((mid = msgget(key, 0)) == -1) {
+        perror("Manager: msgget");
+        return;
+    }
+
+    msg.msg_type = TO_TEAM;
+    msg.pid = pid;
+    msg.sender_type = sender_type;
+    msg.flag = flag;
+    msg.val = val;
+
+    if (msgsnd(mid, &msg, sizeof(msg) - sizeof(long), 0) == -1) {
+        perror("Manager: msgsnd error");
+    }
+}
+
 int randBetween(int min, int max){
     return rand() % (max - min + 1 ) + min;
 }
 
-// int main(){
-//     int configValues[14];
-//     int numOfConfig = read_supermarket_config(configValues);
-//     for(int i =0; i<numOfConfig;i++){
-//         printf("%d\n",configValues[i]);
-//     }
-// }

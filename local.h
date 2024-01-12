@@ -35,6 +35,7 @@
 #define SHELF_FILE "shelf.txt"
 #define STORAGE_FILE "storage.txt"
 #define SEED 'v'
+#define GUISEED 'a'
 #define TO_TEAM 1L
 
 typedef struct{
@@ -43,8 +44,45 @@ typedef struct{
     int count;
 } MESSAGE;
 
+#define SENT_BY_CUSTOMER 0
+#define SENT_BY_TEAM 1
+#define SENT_TO_MODIFY_FILES 2
+
+#define ADD_FLAG 0
+#define REMOVE_FLAG 1
+#define MODIFY_FLAG 2
+
+#define MODIFY_STORAGE 3
+#define MODIFY_SHELVES 4
+
+typedef struct {
+    long msg_type;
+    int pid;
+    int sender_type;
+    int flag;  
+    int val;    
+} MessageGUI;
+/*
+Regardless of who is sending, pid will contain their Process ID
+
+If customer is sending message:
+flag == 0 : add customer 
+flag == 1 : remove customer 
+
+If Team sending message:
+flag == 0: add team
+flag == 1: remove team
+flag == 2: take index from flag & value from val. decrement/increment item[index] by value
+
+if Supermarket sending the message:
+take item index from flag, value from val, decrement/increment storage[index] by val
+*/
+
+
+
 int read_supermarket_config(int configValues[]);
 int randBetween(int min, int max);
+void sendToOpenGL( int pid ,int sender_type ,int flag, int val );
 
 #endif
 

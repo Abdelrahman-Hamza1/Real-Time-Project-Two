@@ -2,7 +2,8 @@
 // still no ready to execute
 int main(int argc, char *arg[]){
 
-    // printf("Customer [%d] Starting!\n", getpid());
+    sleep(1);
+    sendToOpenGL(getpid(), SENT_BY_CUSTOMER, ADD_FLAG, 0);
     prctl(PR_SET_PDEATHSIG, SIGHUP); // GET A SIGNAL WHEN PARENT IS KILLED
 
     int ppid = atoi(arg[1]);
@@ -51,6 +52,7 @@ int main(int argc, char *arg[]){
         printf("Customer[%d]: I chose to buy item [%d]  with quantity [%d]\n", getpid() ,itemIndex+1,quantity);
         // update the array
         itemsOnShelf[itemIndex] -= quantity ;
+        sendToOpenGL(itemIndex, SENT_TO_MODIFY_FILES, MODIFY_SHELVES, -1*quantity);
     }
     
 
@@ -74,5 +76,6 @@ int main(int argc, char *arg[]){
 
     printf("Customer[%d] Sending Signal to Supermarket\n", getpid());
     kill(ppid,SIGUSR1 ); // after we finish, signal to parent!
+    sendToOpenGL(getpid(), SENT_BY_CUSTOMER, REMOVE_FLAG, 0);
     return 1;
 }

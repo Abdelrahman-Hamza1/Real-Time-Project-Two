@@ -52,9 +52,20 @@ int main(int argc, char *arg[]){
     alarm(maxRunTime*60);
     int itemsOnShelf[NUMOFPRODUCTS];
     int storage[NUMOFPRODUCTS];
-    initialize_storage(storage, NUMOFPRODUCTS, STORAGE_AMOUNT_PER_PRODUCT); // NOTE ON INITALIZATION: MIGHT NOT BE NEEDED IF DATA IS FED INTO THE INPUT FILE
+    initialize_storage(storage, NUMOFPRODUCTS, STORAGE_AMOUNT_PER_PRODUCT); 
     initialize_shelves(itemsOnShelf, NUMOFPRODUCTS, SHELF_AMOUNT_PER_PRODUCT);
 
+
+    switch (fork()) {
+        case -1:
+        perror("GUI: fork");
+        return 2;
+
+        case 0:    
+        execlp("./a.out", "a.out" ,"&", 0);
+        perror("GUI: exec");
+        return 3;
+    }
 
     for (int i = 0 ; i < NUM_OF_SHELVING_TEAMS; i++){
         switch (fork()) {
@@ -72,17 +83,17 @@ int main(int argc, char *arg[]){
     }
 
     switch (fork()) {
-    case -1:
-    perror("Client: fork");
-    return 2;
+        case -1:
+        perror("Client: fork");
+        return 2;
 
-    case 0:
-    char ppid_str[20];
-    sprintf(ppid_str, "%d", myPid);        
-    execlp("./forkcustomers", "forkcustomers", ppid_str,"&", 0);
-    perror("customer: exec");
-    return 3;
-}
+        case 0:
+        char ppid_str[20];
+        sprintf(ppid_str, "%d", myPid);        
+        execlp("./forkcustomers", "forkcustomers", ppid_str,"&", 0);
+        perror("customer: exec");
+        return 3;
+    }
     while(1){
         pause();
     }
@@ -260,6 +271,7 @@ int check_storage_file(int NUMOFPRODUCTS, int index, int RESTOCK_AMOUNT){
         for(int i =0;i< NUMOFPRODUCTS; i++){
             if(i == index){
                 itemsInStorage[i] -= refillAmount;
+                sendToOpenGL(i, SENT_TO_MODIFY_FILES, MODIFY_STORAGE, -1*refillAmount);
             }
             printf("ItemsInStorage[%d] = %d\n", i, itemsInStorage[i]);
         }
