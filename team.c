@@ -1,8 +1,6 @@
-// THis represents a Team!
-
 #include "local.h"
-int supermarket_config[CONFIG_SIZE]; 
 
+int supermarket_config[CONFIG_SIZE]; 
 pthread_mutex_t count_mutex = PTHREAD_MUTEX_INITIALIZER;  
 pthread_cond_t count_threshold_cv = PTHREAD_COND_INITIALIZER; 
 int itemIndex = 0; 
@@ -10,21 +8,20 @@ int itemCounter = 0;
 int addVal = 0;
 void * Manager(void *);
 void* Employee (void*);
+
 int main(int argc, char* argv[])
 {   
     sleep(1);
     sendToOpenGL(getpid(), SENT_BY_TEAM, ADD_FLAG, -2);
     prctl(PR_SET_PDEATHSIG, SIGHUP); // GET A SIGNAL WHEN PARENT IS KILLED
+    
     int numOfConfig = read_supermarket_config(supermarket_config); 
-
     int employeeCount = supermarket_config[3];
     int threadIds [employeeCount];
     int managerThreadId; 
     pthread_t threadJoin[employeeCount];
     pthread_t managerJoin;
     printf("Team[%d]: Getting Started!\n", getpid());
-
-
     managerThreadId = pthread_create(&managerJoin, NULL, Manager, (void *) NULL);
 
     for (int i = 0 ; i < employeeCount ; i++){
@@ -58,8 +55,8 @@ void* Manager(void* data){
     }
 
     while(1){
+            
         pthread_mutex_lock(&count_mutex);
-        
         printf("Manager[%d]: Now Waiting for Msg From Queue!\n", getpid());
         sendToOpenGL(getpid(), SENT_BY_TEAM, MODIFY_FLAG, -2);
         if ((n = msgrcv(mid, &msg, sizeof(msg), TO_TEAM, 0)) == -1 ) { /* Start waiting for a message to appear in MQ */
@@ -82,10 +79,8 @@ void* Manager(void* data){
                 perror("fopen (shelves file)");
                 exit(EXIT_FAILURE);
             }
-
             int NUMOFPRODUCTS = supermarket_config[0];
             int RESTOCK_AMOUNT = supermarket_config[5];
-
             int itemsOnShelf[NUMOFPRODUCTS];
             int locks[NUMOFPRODUCTS]; // to read the second column
             // read the shelves file
@@ -98,7 +93,6 @@ void* Manager(void* data){
                     locks[i] = 0;
                 }
             }
-
             rewind(file);// return the pointer to the start of the file
             for(int i =0 ;i<NUMOFPRODUCTS;i++){
                 if( i == NUMOFPRODUCTS-1){
@@ -107,7 +101,6 @@ void* Manager(void* data){
                 }
                 fprintf(file,"%d %d\n", itemsOnShelf[i], locks[i]);  
             }
-
             fclose(file);
 
             sem_post(sem);
@@ -126,14 +119,10 @@ void* Employee(void* data){
         if(itemCounter != 0){
             itemCounter--;
             sendToOpenGL(itemIndex, SENT_TO_MODIFY_FILES, MODIFY_SHELVES, 1);
-            //printf("Emplouee[%d]: Thread [%d] just shelved a unit. [%d] Units remaining!\n", getpid(), data, itemCounter);
         }
         if(itemCounter == 0)
         pthread_cond_broadcast(&count_threshold_cv);  
-
         pthread_mutex_unlock(&count_mutex); 
         sleep(1);
-        //usleep(1000);
     }
-
 }
