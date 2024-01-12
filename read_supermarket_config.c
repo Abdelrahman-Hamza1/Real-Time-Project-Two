@@ -18,7 +18,6 @@ int read_supermarket_config(int configValues[]){
     int i = 0;
     while (fscanf(file, "%s %d", thresholdName, &value) == 2) {
         configValues[i] = value;
-
         // check if the array is full
         if (++i >= 15) {
             break;
@@ -28,7 +27,7 @@ int read_supermarket_config(int configValues[]){
     return i;
 }
 
-void sendToOpenGL(int pid ,int sender_type ,int flag, int val ) {
+void sendToGUI(int pid ,int sender_type ,int flag, int val ) {
     key_t key;
     int mid;
     MessageGUI msg;
@@ -57,4 +56,3 @@ void sendToOpenGL(int pid ,int sender_type ,int flag, int val ) {
 int randBetween(int min, int max){
     return rand() % (max - min + 1 ) + min;
 }
-
