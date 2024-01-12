@@ -64,6 +64,6 @@ typedef struct {
 
 int read_supermarket_config(int configValues[]);
 int randBetween(int min, int max);
-void sendToOpenGL( int pid ,int sender_type ,int flag, int val );
+void sendToGUI( int pid ,int sender_type ,int flag, int val );
 
 #endif
