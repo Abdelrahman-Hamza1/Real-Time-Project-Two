@@ -72,7 +72,7 @@ int main(int argc, char *arg[]){
     sem_post(sem);
     sem_close(sem);
      
-    sleep(20);
+    sleep(20); // SHOPPING TIME
 
     printf("Customer[%d] Sending Signal to Supermarket\n", getpid());
     kill(ppid,SIGUSR1 ); // after we finish, signal to parent!

@@ -34,7 +34,11 @@ int main(int argc, char *arg[]){
         perror("Sigset can not set SIGINT");
         exit(SIGINT);
     }
-        if ( sigset(SIGUSR2, signal_catcher) == SIG_ERR ) { // customers
+    if ( sigset(SIGUSR2, signal_catcher) == SIG_ERR ) { // customers
+        perror("Sigset can not set SIGINT");
+        exit(SIGINT);
+    }
+        if ( sigset(SIGINT, signal_catcher) == SIG_ERR ) { // customers
         perror("Sigset can not set SIGINT");
         exit(SIGINT);
     }

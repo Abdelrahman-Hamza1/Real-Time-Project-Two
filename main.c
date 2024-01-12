@@ -55,9 +55,6 @@ int main(void) {
         }
         shelvesCount++;
     }
-    for(int i = 0 ; i < NUMOFPRODUCTS; i++){
-      printf("IN GUI: shelves[%d] = %d and storage[%d] = %d", i ,shelves[i], i, storage[i]);
-    }
 
     fclose(file2);
 
@@ -105,7 +102,7 @@ int main(void) {
         int stepSizeCashier = screenHeight / teamCounter;
         for (int i = 0 ; i < teamCounter ; i++){
             cashierStrings[i] = (char *)malloc(100);
-            snprintf(cashierStrings[i], 100, "Team[%d] working on item[%d]", teams[i].id, teams[i].val);
+            snprintf(cashierStrings[i], 100, "Team[%d] working on item[%d]", teams[i].id, teams[i].val+1);
             const char * text = cashierStrings[i];
             DrawRectangle(baseCASHX, ( baseCASHY + stepSizeCashier*(i+1) ) % screenHeight , width, height, rectangleColor);
             DrawTextEx(font, text, (Vector2){baseCASHX , ( baseCASHY + stepSizeCashier*(i+1)  ) % screenHeight }, font.baseSize, 0.0f, textColor);
@@ -119,7 +116,7 @@ int main(void) {
         int stepSizeShelf = screenHeight / shelvesCount;
         for (int i = 0 ; i < shelvesCount ; i++){
             shelveStrings[i] = (char *)malloc(100);
-            snprintf(shelveStrings[i], 100, "Shelf[%d] quantity[%d]", i, shelves[i]);
+            snprintf(shelveStrings[i], 100, "Shelf[%d] quantity[%d]", i+1, shelves[i]);
             const char * text = shelveStrings[i];
             DrawRectangle(baseCASHX, ( baseCASHY + stepSizeShelf*(i+1) ) % screenHeight , width, height, rectangleColor);
             DrawTextEx(font, text, (Vector2){baseCASHX , ( baseCASHY + stepSizeShelf*(i+1)  ) % screenHeight }, font.baseSize, 0.0f, textColor);
@@ -133,14 +130,14 @@ int main(void) {
         int stepSizeStorage = screenHeight / storageCount; 
         for (int i = 0 ; i < storageCount ; i++){
             storageStrings[i] = (char *)malloc(100);
-            snprintf(storageStrings[i], 100, "Storage[%d] quantity[%d]", i, storage[i]);
+            snprintf(storageStrings[i], 100, "Storage[%d] quantity[%d]", i+1, storage[i]);
             const char * text = storageStrings[i];
             DrawRectangle(baseCASHX, ( baseCASHY + stepSizeStorage*(i+1) ) % screenHeight , width, height, rectangleColor);
             DrawTextEx(font, text, (Vector2){baseCASHX , ( baseCASHY + stepSizeStorage*(i+1)  ) % screenHeight }, font.baseSize, 0.0f, textColor);
         }
     }
 
-    
+
     EndDrawing();
   }
 
@@ -175,6 +172,7 @@ void* myThreadFunction(void* args){
         customerCounter++;
         } else if (msg.flag == REMOVE_FLAG) {
             removeEntry(customers, 100, msg.pid);
+            customerCounter--;
         }
     } else if (msg.sender_type == SENT_BY_TEAM) {
         if (msg.flag == ADD_FLAG) {
@@ -185,6 +183,7 @@ void* myThreadFunction(void* args){
         teamCounter++;
         } else if (msg.flag == REMOVE_FLAG) {
             removeEntry(teams, 100, msg.pid);
+            teamCounter--;
         } else if (msg.flag == MODIFY_FLAG) {
             for (int i = 0 ; i < teamCounter; i++){
               if (teams[i].id == msg.pid){
